@@ -263,7 +263,7 @@ const displayPopUp = (currentFeature) => {
 
   const popup = new mapboxgl.Popup({ closeOnClick: false })
     .setLngLat(currentFeature.geometry.coordinates)
-    .setHTML(`<h3>${currentFeature.properties.name}</h3> | <h4>${currentFeature.geometry.coordinates}`)
+    .setHTML(`<h3>Vessel No.${currentFeature.properties.name.match(/\d+/)[0]}</h3><h4>Coordinates (${currentFeature.properties.lat.toFixed(2)}, ${currentFeature.properties.long.toFixed(2)})</h4>`)
     .addTo(map)
 
 }
