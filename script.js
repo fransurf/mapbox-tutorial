@@ -125,8 +125,7 @@ const vessels = [
   }
 ]
 
-
-// * Function to create GeoJSON with 'coordinates' KVP
+// * Function to create GeoJSON with 'coordinates' KVP & order vessels 0-9
 const vesselsGeoJSON = vessels.map(ship => {
   return {
     type: "Feature",
@@ -136,7 +135,7 @@ const vesselsGeoJSON = vessels.map(ship => {
     },
     properties: { ...ship },
   }
-})
+}).sort((a, b) => (a.properties.name > b.properties.name ? 1 : -1))
 
 // * Function to create mapbox data structure
 const vesselsObj = {
@@ -150,7 +149,7 @@ console.log('vesselsObj --->', vesselsObj)
 // * Adds data layer to map with geojson source
 map.on('load', () => {
   map.addSource('places', {
-    type: 'geojson', 
+    type: 'geojson',
     data: vesselsObj
   })
   vesselsList(vesselsObj)
@@ -177,12 +176,13 @@ const addMarker = () => {
       const activeItem = document.getElementsByClassName('active')
       e.stopPropagation()
       if (activeItem[0]) activeItem[0].classList.remove('active')
-      
+
       const listing = document.getElementById(`listing-${marker.properties.mmsi}`)
       listing.classList.add('active')
     })
   }
 }
+
 
 // * Adds vessel info to listings list & handles click
 const vesselsList = (vesselsObj) => {
@@ -200,11 +200,18 @@ const vesselsList = (vesselsObj) => {
     link.href = '#'
     link.className = 'title'
     link.id = `link-${vessel.properties.mmsi}`
-    link.innerHTML = `${vessel.properties.name}`
+
+    const nicerName = `Vessel No.${vessel.properties.name.match(/\d+/)[0]}`
+    link.innerHTML = `${nicerName}`
+
+    // * Function to get date info
+    const longDate = vessel.properties.timestamp
+    const date = new Date(longDate)
+    const useableDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
 
     // * ADD ADDITIONAL DETAILS
     const details = listing.appendChild(document.createElement('div'))
-    details.innerHTML = `Last recorded at coordinates ${vessel.geometry.coordinates} on ${vessel.properties.timestamp}`;
+    details.innerHTML = `Last recorded at coordinates (${vessel.properties.lat.toFixed(2)}, ${vessel.properties.long.toFixed(2)}) on ${useableDate}`;
     if (vessel.properties.speed >= 0.1) {
       details.innerHTML += ` | Travelling at ${vessel.properties.speed} knots, heading ${vessel.properties.heading} deg north`
     } else {
@@ -212,7 +219,7 @@ const vesselsList = (vesselsObj) => {
     }
 
     // Handle click on link
-    link.addEventListener('click', function() {
+    link.addEventListener('click', function () {
       for (const vessel of vesselsObj.features) {
         if (this.id === `link-${vessel.properties.mmsi}`) {
           flyToVessel(vessel)
@@ -244,6 +251,9 @@ vesselsTitle.addEventListener('click', () => {
     center: [-3.0370, 53.8167],
     zoom: 5,
   })
+  // Remove existing popups
+  const popUps = document.getElementsByClassName('mapboxgl-popup')
+  if (popUps[0]) popUps[0].remove()
 })
 
 // Display popup & remove existing popup
