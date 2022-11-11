@@ -112,16 +112,3 @@ const ships = {
 		"imo": 1234576
 	}
 ]}
-
-
-
-const coordinates = []
-const addCoordinates = () => {
-  this.features.map(data, i) => ({ ...data, 
-    coordinates.push([features.long, features.lat])
-  }) 
-}
-
-addCoordinates()
-
-console.log(features)

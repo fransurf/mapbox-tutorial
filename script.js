@@ -4,8 +4,8 @@ const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/outdoors-v11',
   // Change centre to over sea??
-  center: [-2.587910, 51.454514],
-  zoom: 10,
+  center: [-3.0370, 53.8167],
+  zoom: 5,
   scrollZoom: true,
 })
 
@@ -147,15 +147,113 @@ const vesselsObj = {
 console.log('vesselsGeoJSON --->', vesselsGeoJSON)
 console.log('vesselsObj --->', vesselsObj)
 
-// * Add data layer to map with geojson source
+// * Adds data layer to map with geojson source
 map.on('load', () => {
-  map.addLayer({
-    id: 'locations',
-    type: 'circle',
-    source: {
-      type: 'geojson',
-      data: vesselsObj
+  map.addSource('places', {
+    type: 'geojson', 
+    data: vesselsObj
+  })
+  vesselsList(vesselsObj)
+  addMarker()
+})
+
+// * Function to add custom markers to map at vessel locations
+const addMarker = () => {
+  for (const marker of vesselsObj.features) {
+    // Create a div with marker-mmsi id and marker class
+    const el = document.createElement('div')
+    el.id = `marker-${marker.properties.mmsi}`
+    el.className = 'marker'
+
+    new mapboxgl.Marker(el, { offset: [0, -23] })
+      .setLngLat(marker.geometry.coordinates)
+      .addTo(map)
+
+    // Click event => Fly to vessel, open display/remove existing & highlight in sidebar
+    el.addEventListener('click', (e) => {
+      flyToVessel(marker)
+      displayPopUp(marker)
+
+      const activeItem = document.getElementsByClassName('active')
+      e.stopPropagation()
+      if (activeItem[0]) activeItem[0].classList.remove('active')
+      
+      const listing = document.getElementById(`listing-${marker.properties.mmsi}`)
+      listing.classList.add('active')
+    })
+  }
+}
+
+// * Adds vessel info to listings list & handles click
+const vesselsList = (vesselsObj) => {
+  for (const vessel of vesselsObj.features) {
+    // * Add new listing div for each vessel
+    const listings = document.getElementById('listings')
+    const listing = listings.appendChild(document.createElement('div'))
+
+    // * Assign mmsi id & item class to listing
+    listing.id = `listing-${vessel.properties.mmsi}`
+    listing.className = 'item'
+
+    // * Add a link to the vessel??
+    const link = listing.appendChild(document.createElement('a'))
+    link.href = '#'
+    link.className = 'title'
+    link.id = `link-${vessel.properties.mmsi}`
+    link.innerHTML = `${vessel.properties.name}`
+
+    // * ADD ADDITIONAL DETAILS
+    const details = listing.appendChild(document.createElement('div'))
+    details.innerHTML = `Last recorded at coordinates ${vessel.geometry.coordinates} on ${vessel.properties.timestamp}`;
+    if (vessel.properties.speed >= 0.1) {
+      details.innerHTML += ` | Travelling at ${vessel.properties.speed} knots, heading ${vessel.properties.heading} deg north`
+    } else {
+      details.innerHTML += ' | This vessel was stationary'
     }
+
+    // Handle click on link
+    link.addEventListener('click', function() {
+      for (const vessel of vesselsObj.features) {
+        if (this.id === `link-${vessel.properties.mmsi}`) {
+          flyToVessel(vessel)
+          displayPopUp(vessel)
+        }
+      }
+      const activeItem = document.getElementsByClassName('active')
+      if (activeItem[0]) {
+        activeItem[0].classList.remove('active')
+      }
+      this.parentNode.classList.add('active')
+    })
+  }
+}
+
+// * INTERACTIVE FUNCTIONS
+// Centre on clicked feature
+const flyToVessel = (currentFeature) => {
+  map.flyTo({
+    center: currentFeature.geometry.coordinates,
+    zoom: 7
+  })
+}
+
+// Recentre screen on Title click
+const vesselsTitle = document.getElementById('map-centre')
+vesselsTitle.addEventListener('click', () => {
+  map.flyTo({
+    center: [-3.0370, 53.8167],
+    zoom: 5,
   })
 })
 
+// Display popup & remove existing popup
+const displayPopUp = (currentFeature) => {
+  const popUps = document.getElementsByClassName('mapboxgl-popup')
+  if (popUps[0]) popUps[0].remove()
+
+  const popup = new mapboxgl.Popup({ closeOnClick: false })
+    .setLngLat(currentFeature.geometry.coordinates)
+    .setHTML(`<h3>${currentFeature.properties.name}</h3> | <h4>${currentFeature.geometry.coordinates}`)
+    .addTo(map)
+
+}
