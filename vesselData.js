@@ -1,4 +1,6 @@
-const vessels = [
+const ships = {
+  "type": "FeatureCollection",
+  "features": [
 	{
 		"mmsi": 229998000,
 		"timestamp": "2022-07-31 13:00:00+00:00",
@@ -109,4 +111,17 @@ const vessels = [
 		"name": "vessel_9",
 		"imo": 1234576
 	}
-]
+]}
+
+
+
+const coordinates = []
+const addCoordinates = () => {
+  this.features.map(data, i) => ({ ...data, 
+    coordinates.push([features.long, features.lat])
+  }) 
+}
+
+addCoordinates()
+
+console.log(features)
